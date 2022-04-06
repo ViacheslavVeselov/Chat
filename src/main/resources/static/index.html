@@ -1,0 +1,30 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hello WebSocket</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.2/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body>
+
+<script>
+
+    window.addEventListener('load', (e) => {
+        const socket = new SockJS('http://localhost:8081/chat-ws')
+        const stompClient = Stomp.over(socket)
+        stompClient.connect({}, (frame) => {
+            document.writeln("Established connection")
+            document.close()
+            stompClient.subscribe('/user/c7e4a71a-9d65-4795-a1a3-e823c8fd09f2/queue/messages', (mes) => {
+                document.writeln("<html lang='en'><h2>" + mes.body + "</h2></html>")
+                document.close()
+            });
+
+        });
+
+
+    })
+</script>
+</body>
+</html>
