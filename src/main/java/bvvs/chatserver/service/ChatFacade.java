@@ -4,6 +4,9 @@ import bvvs.chatserver.exception.ValidationException;
 import bvvs.chatserver.models.Chat;
 import bvvs.chatserver.models.ChatMessage;
 import bvvs.chatserver.models.User;
+import bvvs.chatserver.models.dto.ChatJoinDto;
+import bvvs.chatserver.models.dto.CreateGroupChatDto;
+import bvvs.chatserver.models.dto.EditChatSettingsDto;
 import bvvs.chatserver.models.dto.MessageDto;
 import bvvs.chatserver.repo.ChatMessageRepository;
 import bvvs.chatserver.repo.ChatRepository;
@@ -44,5 +47,71 @@ public class ChatFacade {
                 messageRepository.save(chatMessage.withChatId(chatRepository.save(chat).getId())));
     }
 
+    public void sendGroupMessage(MessageDto messageDto, UUID groupId) {
+        User sender = userService.tryGetUserById(messageDto.getUserId());
+        ChatMessage chatMessage = ChatMessage.from(messageDto, sender);
+        Chat chat = chatRepository.findById(groupId).orElseThrow(() -> new ValidationException(Map.of("No such chat!",
+                groupId.toString())));
 
+        wsSenderService.sendGroupMessage(chat,
+                messageRepository.save(chatMessage.withChatId(chatRepository.save(chat).getId())));
+    }
+
+    public Chat getChat(UUID chatId) {
+        Chat chat = chatRepository.findById(chatId).orElseThrow(() -> new ValidationException(Map.of("No such chat!",
+                chatId.toString())));
+
+        //TODO return chat with messages
+        return chat;
+    }
+
+    public Chat createGroupChat(CreateGroupChatDto createGroupChatDto) {
+        Chat chat = new Chat();
+        chat.setTitle(createGroupChatDto.getTitle());
+        User createdBy = userService.tryGetUserById(UUID.fromString(createGroupChatDto.getCreatedBy()));
+        chat.setUser(createdBy);
+
+        for (String userId : createGroupChatDto.getUserIds()) {
+            User user = userService.tryGetUserById(UUID.fromString(userId));
+            chat.addUser(user);
+        }
+
+        return chatRepository.save(chat);
+    }
+
+    public Chat joinGroupChat(UUID groupId, ChatJoinDto chatJoinDto) {
+        Chat chat = chatRepository.findById(groupId).orElseThrow(() -> new ValidationException(Map.of("No such chat!",
+                groupId.toString())));
+        UUID userId = UUID.fromString(chatJoinDto.getUserId());
+        User user = userService.tryGetUserById(userId);
+        chat.addUserAndSetIsChatAdmin(user, Boolean.parseBoolean(chatJoinDto.getIsChatAdmin()));
+
+        //TODO return chat with messages
+        return chat;
+    }
+
+    public void leaveGroupChat(UUID groupId, UUID userId) {
+        Chat chat = chatRepository.findById(groupId).orElseThrow(() -> new ValidationException(Map.of("No such chat!",
+                groupId.toString())));
+        User user = userService.tryGetUserById(userId);
+        chat.deleteUser(user);
+    }
+
+    public void deleteChat(UUID chatId) {
+        Chat chat = chatRepository.findById(chatId).orElseThrow(() -> new ValidationException(Map.of("No such chat!",
+                chatId.toString())));
+        chatRepository.delete(chat);
+    }
+
+    public Chat editChatSettings(UUID chatId, UUID userId, EditChatSettingsDto editChatSettingsDto) {
+        Chat chat = chatRepository.findById(chatId).orElseThrow(() -> new ValidationException(Map.of("No such chat!",
+                chatId.toString())));
+        User user = userService.tryGetUserById(userId);
+        boolean banned = editChatSettingsDto.isBanned();
+        boolean sendNotifications = editChatSettingsDto.isSendNotifications();
+        chat.editChatSettings(user, banned, sendNotifications);
+
+        //TODO return chat with messages
+        return chat;
+    }
 }

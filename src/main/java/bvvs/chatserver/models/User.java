@@ -1,5 +1,6 @@
 package bvvs.chatserver.models;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
@@ -44,6 +45,7 @@ public class User {
     private String photoPathToFile;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<UserChatSettings> userChatSettings = new ArrayList<>();
 
     @Override

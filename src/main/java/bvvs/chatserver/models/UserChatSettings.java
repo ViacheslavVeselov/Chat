@@ -1,12 +1,17 @@
 package bvvs.chatserver.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import javax.persistence.*;
 import java.util.Objects;
 
 @Entity(name = "chat_user_settings")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserChatSettings {
@@ -19,12 +24,21 @@ public class UserChatSettings {
         this.id = new UserChatSettingsCompositeId(chat.getId(), user.getId());
     }
 
+    public UserChatSettings(Chat chat, User user, Boolean isChatAdmin) {
+        this.chat = chat;
+        this.user = user;
+        this.isChatAdmin = isChatAdmin;
+        this.id = new UserChatSettingsCompositeId(chat.getId(), user.getId());
+    }
+
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("chatId")
+    @JsonBackReference
     private Chat chat;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("userId")
+    @JsonBackReference
     private User user;
 
     @Column(name="send_notifications")

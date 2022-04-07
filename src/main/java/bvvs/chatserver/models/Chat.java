@@ -1,5 +1,6 @@
 package bvvs.chatserver.models;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
@@ -32,12 +33,46 @@ public class Chat {
     private User user;
 
     @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<UserChatSettings> userChatSettingsList = new ArrayList<>();
 
     public void addUser(User user) {
         UserChatSettings ucs = new UserChatSettings(this, user);
         userChatSettingsList.add(ucs);
         user.getUserChatSettings().add(ucs);
+    }
+
+    public void addUserAndSetIsChatAdmin(User user, Boolean isChatAdmin) {
+        UserChatSettings ucs = new UserChatSettings(this, user, isChatAdmin);
+        userChatSettingsList.add(ucs);
+        user.getUserChatSettings().add(ucs);
+    }
+
+    public void deleteUser(User user) {
+        List<UserChatSettings> ucsList = getUserChatSettingsList();
+        UserChatSettings deleteUcs = null;
+
+        for (UserChatSettings ucs : ucsList) {
+            if (ucs.getUser().getId().equals(user.getId()) && ucs.getChat().getId().equals(getId())) {
+                deleteUcs = ucs;
+            }
+        }
+
+        if (deleteUcs != null) {
+            ucsList.remove(deleteUcs);
+            user.getUserChatSettings().remove(deleteUcs);
+        }
+    }
+
+    public void editChatSettings(User user, boolean banned, boolean sendNotifications) {
+        List<UserChatSettings> ucsList = getUserChatSettingsList();
+
+        for (UserChatSettings ucs : ucsList) {
+            if (ucs.getUser().getId().equals(user.getId()) && ucs.getChat().getId().equals(getId())) {
+                ucs.setBanned(banned);
+                ucs.setSendNotifications(sendNotifications);
+            }
+        }
     }
 
     @Override
