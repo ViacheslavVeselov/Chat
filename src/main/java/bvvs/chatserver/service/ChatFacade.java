@@ -4,6 +4,7 @@ import bvvs.chatserver.exception.ValidationException;
 import bvvs.chatserver.models.Chat;
 import bvvs.chatserver.models.ChatMessage;
 import bvvs.chatserver.models.User;
+import bvvs.chatserver.models.UserChatSettings;
 import bvvs.chatserver.models.dto.ChatJoinDto;
 import bvvs.chatserver.models.dto.CreateGroupChatDto;
 import bvvs.chatserver.models.dto.EditChatSettingsDto;
@@ -121,5 +122,17 @@ public class ChatFacade {
         response.put("chat", chat);
         response.put("messages", messages);
         return response;
+    }
+
+    // this method needs spring.jackson.serialization.fail-on-empty-beans=false in application.properties
+    public List<Chat> getChats(User user) {
+        List<UserChatSettings> ucsList = user.getUserChatSettings();
+        List<UUID> chatsIds = new ArrayList<>();
+
+        for (UserChatSettings ucs : ucsList) {
+            UUID chatId = ucs.getChat().getId();
+            chatsIds.add(chatId);
+        }
+        return (List<Chat>) chatRepository.findAllById(chatsIds);
     }
 }
