@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -24,6 +25,7 @@ import javax.servlet.http.HttpServletResponse;
 @EnableWebSecurity
 @AllArgsConstructor
 @ComponentScan("bvvs.chatserver")
+@EnableGlobalMethodSecurity(prePostEnabled = true) // allows to control access for users/admins
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private final JwtTokenProvider tokenProvider;
     private final UserDetailsService userDetailsService;
