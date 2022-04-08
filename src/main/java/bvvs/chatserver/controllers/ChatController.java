@@ -9,6 +9,7 @@ import bvvs.chatserver.models.dto.MessageDto;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.UUID;
 
 import static org.springframework.http.HttpStatus.*;
@@ -33,8 +34,8 @@ public class ChatController {
 
     @GetMapping("/{chatId}")
     @ResponseStatus(OK)
-    public Chat getChat(@PathVariable UUID chatId) {
-        return chatFacade.getChat(chatId);
+    public Map<String, Object> getChat(@PathVariable UUID chatId) {
+        return chatFacade.getChatWithMessages(chatId);
     }
 
     // method requires to add createdBy to userIds
@@ -46,7 +47,7 @@ public class ChatController {
 
     @PostMapping("/group/{groupId}/join")
     @ResponseStatus(CREATED)
-    public Chat joinGroupChat(@PathVariable UUID groupId, @RequestBody ChatJoinDto chatJoinDto) {
+    public Map<String, Object> joinGroupChat(@PathVariable UUID groupId, @RequestBody ChatJoinDto chatJoinDto) {
         return chatFacade.joinGroupChat(groupId, chatJoinDto);
     }
 
@@ -64,7 +65,7 @@ public class ChatController {
 
     @PutMapping("/{chatId}/{userId}/edit")
     @ResponseStatus(OK)
-    public Chat editChatSettings(
+    public Map<String, Object> editChatSettings(
             @PathVariable UUID chatId,
             @PathVariable UUID userId,
             @RequestBody EditChatSettingsDto editChatSettingsDto

@@ -14,8 +14,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Transactional
@@ -57,12 +56,15 @@ public class ChatFacade {
                 messageRepository.save(chatMessage.withChatId(chatRepository.save(chat).getId())));
     }
 
-    public Chat getChat(UUID chatId) {
+    public Map<String, Object> getChatWithMessages(UUID chatId) {
         Chat chat = chatRepository.findById(chatId).orElseThrow(() -> new ValidationException(Map.of("No such chat!",
                 chatId.toString())));
 
-        //TODO return chat with messages
-        return chat;
+        List<ChatMessage> messages = messageRepository.findByChatId(chatId);
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("chat", chat);
+        response.put("messages", messages);
+        return response;
     }
 
     public Chat createGroupChat(CreateGroupChatDto createGroupChatDto) {
@@ -79,15 +81,18 @@ public class ChatFacade {
         return chatRepository.save(chat);
     }
 
-    public Chat joinGroupChat(UUID groupId, ChatJoinDto chatJoinDto) {
+    public Map<String, Object> joinGroupChat(UUID groupId, ChatJoinDto chatJoinDto) {
         Chat chat = chatRepository.findById(groupId).orElseThrow(() -> new ValidationException(Map.of("No such chat!",
                 groupId.toString())));
         UUID userId = UUID.fromString(chatJoinDto.getUserId());
         User user = userService.tryGetUserById(userId);
         chat.addUserAndSetIsChatAdmin(user, Boolean.parseBoolean(chatJoinDto.getIsChatAdmin()));
 
-        //TODO return chat with messages
-        return chat;
+        List<ChatMessage> messages = messageRepository.findByChatId(chat.getId());
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("chat", chat);
+        response.put("messages", messages);
+        return response;
     }
 
     public void leaveGroupChat(UUID groupId, UUID userId) {
@@ -103,7 +108,7 @@ public class ChatFacade {
         chatRepository.delete(chat);
     }
 
-    public Chat editChatSettings(UUID chatId, UUID userId, EditChatSettingsDto editChatSettingsDto) {
+    public Map<String, Object> editChatSettings(UUID chatId, UUID userId, EditChatSettingsDto editChatSettingsDto) {
         Chat chat = chatRepository.findById(chatId).orElseThrow(() -> new ValidationException(Map.of("No such chat!",
                 chatId.toString())));
         User user = userService.tryGetUserById(userId);
@@ -111,7 +116,10 @@ public class ChatFacade {
         boolean sendNotifications = editChatSettingsDto.isSendNotifications();
         chat.editChatSettings(user, banned, sendNotifications);
 
-        //TODO return chat with messages
-        return chat;
+        List<ChatMessage> messages = messageRepository.findByChatId(chat.getId());
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("chat", chat);
+        response.put("messages", messages);
+        return response;
     }
 }
