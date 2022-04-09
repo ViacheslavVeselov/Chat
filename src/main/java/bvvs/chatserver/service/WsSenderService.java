@@ -1,5 +1,6 @@
 package bvvs.chatserver.service;
 
+import bvvs.chatserver.models.Chat;
 import bvvs.chatserver.models.ChatMessage;
 import bvvs.chatserver.models.User;
 import lombok.AllArgsConstructor;
@@ -13,7 +14,10 @@ public class WsSenderService {
     private final SimpMessagingTemplate messagingTemplate;
 
     public void sendDirectMessage(User user, ChatMessage chatMessage) {
-
         messagingTemplate.convertAndSendToUser(user.getId().toString(), "/queue/messages", chatMessage);
+    }
+
+    public void sendGroupMessage(Chat chat, ChatMessage chatMessage) {
+        messagingTemplate.convertAndSend("/group/" + chat.getId().toString(), chatMessage);
     }
 }

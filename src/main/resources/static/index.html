@@ -16,7 +16,7 @@
         stompClient.connect({}, (frame) => {
             document.writeln("Established connection")
             document.close()
-            stompClient.subscribe('/user/c7e4a71a-9d65-4795-a1a3-e823c8fd09f2/queue/messages', (mes) => {
+            stompClient.subscribe('/group/8318268f-07f4-42a5-b756-593ef6314364', (mes) => {
                 document.writeln("<html lang='en'><h2>" + mes.body + "</h2></html>")
                 document.close()
             });
@@ -25,6 +25,22 @@
 
 
     })
+
+    <!--window.addEventListener('load', (e) => {
+        const socket = new SockJS('http://localhost:8081/chat-ws')
+        const stompClient = Stomp.over(socket)
+        stompClient.connect({}, (frame) => {
+            document.writeln("Established connection")
+            document.close()
+            stompClient.subscribe('/user/c7e4a71a-9d65-4795-a1a3-e823c8fd09f2/queue/messages', (mes) => {
+                document.writeln("<html lang='en'><h2>" + mes.body + "</h2></html>")
+                document.close()
+            });
+
+        });
+
+
+    })-->
 </script>
 </body>
 </html>
