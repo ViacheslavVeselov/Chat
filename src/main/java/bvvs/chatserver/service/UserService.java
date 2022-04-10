@@ -3,6 +3,7 @@ package bvvs.chatserver.service;
 import bvvs.chatserver.exception.ResourceNotFoundException;
 import bvvs.chatserver.models.User;
 import bvvs.chatserver.models.dto.AuthRequestDto;
+import bvvs.chatserver.models.dto.EditUserDto;
 import bvvs.chatserver.models.dto.UserDto;
 import bvvs.chatserver.repo.RoleRepository;
 import bvvs.chatserver.repo.UserRepository;
@@ -49,5 +50,23 @@ public class UserService {
 
         User user = tryGetUserByEmail(requestDto.getEmail());
         return tokenProvider.createToken(user.getEmail(), user.getRole());
+    }
+
+    public User editUser(User user, EditUserDto editUserDto) {
+        String name = editUserDto.getName();
+        String email = editUserDto.getEmail();
+        String password = editUserDto.getPassword();
+        String photoPathToFile = editUserDto.getPhotoPathToFile();
+
+        user.setName(name);
+        user.setEmail(email);
+        user.setPassword(password);
+        user.setPhotoPathToFile(photoPathToFile);
+        return userRepository.save(user);
+    }
+
+    public User banUser(User user, boolean banned) {
+        user.setBanned(banned);
+        return userRepository.save(user);
     }
 }
