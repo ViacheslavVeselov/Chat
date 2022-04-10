@@ -12,6 +12,7 @@ import bvvs.chatserver.models.dto.MessageDto;
 import bvvs.chatserver.repo.ChatMessageRepository;
 import bvvs.chatserver.repo.ChatRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,36 +26,44 @@ public class ChatFacade {
     private final ChatMessageRepository messageRepository;
     private final UserService userService;
     private final WsSenderService wsSenderService;
+    @Autowired private SendEmailService sendEmailService;
 
     public void sendDirectMessage(MessageDto messageDto, UUID recipientId) {
-
         User sender = userService.tryGetUserById(messageDto.getUserId());
         User recipient = userService.tryGetUserById(recipientId);
-        ChatMessage chatMessage = ChatMessage.from(messageDto, sender);
-        UUID chatId = chatMessage.getChatId();
 
-        Chat chat;
-        if (chatId == null) {
-            chat = new Chat();
-            chat.addUser(sender);
-            chat.addUser(recipient);
-        } else {
-            chat = chatRepository.findById(chatId).orElseThrow(() -> new ValidationException(Map.of("No such chat!",
-                    chatId.toString())));
+        if (!sender.isBanned() && !recipient.isBanned()) {
+            ChatMessage chatMessage = ChatMessage.from(messageDto, sender);
+            UUID chatId = chatMessage.getChatId();
+
+            Chat chat;
+            if (chatId == null) {
+                chat = new Chat();
+                chat.addUser(sender);
+                chat.addUser(recipient);
+            } else {
+                chat = chatRepository.findById(chatId).orElseThrow(() -> new ValidationException(Map.of("No such chat!",
+                        chatId.toString())));
+            }
+
+            wsSenderService.sendDirectMessage(recipient,
+                    messageRepository.save(chatMessage.withChatId(chatRepository.save(chat).getId())));
+            sendEmailFromOneToOneChatIfNeeded(sender, recipient, chat, chatMessage.getText());
         }
-
-        wsSenderService.sendDirectMessage(recipient,
-                messageRepository.save(chatMessage.withChatId(chatRepository.save(chat).getId())));
     }
 
     public void sendGroupMessage(MessageDto messageDto, UUID groupId) {
         User sender = userService.tryGetUserById(messageDto.getUserId());
-        ChatMessage chatMessage = ChatMessage.from(messageDto, sender);
-        Chat chat = chatRepository.findById(groupId).orElseThrow(() -> new ValidationException(Map.of("No such chat!",
-                groupId.toString())));
 
-        wsSenderService.sendGroupMessage(chat,
-                messageRepository.save(chatMessage.withChatId(chatRepository.save(chat).getId())));
+        if (!sender.isBanned()) {
+            ChatMessage chatMessage = ChatMessage.from(messageDto, sender);
+            Chat chat = chatRepository.findById(groupId).orElseThrow(() -> new ValidationException(Map.of("No such chat!",
+                    groupId.toString())));
+
+            wsSenderService.sendGroupMessage(chat,
+                    messageRepository.save(chatMessage.withChatId(chatRepository.save(chat).getId())));
+            sendEmailFromGroupChatIfNeeded(sender, chat, chatMessage.getText());
+        }
     }
 
     public Map<String, Object> getChatWithMessages(UUID chatId) {
@@ -134,5 +143,39 @@ public class ChatFacade {
             chatsIds.add(chatId);
         }
         return (List<Chat>) chatRepository.findAllById(chatsIds);
+    }
+
+    public void sendEmailFromOneToOneChatIfNeeded(User sender, User recipient, Chat chat, String messageText) {
+        List<UserChatSettings> chatUcsList = chat.getUserChatSettingsList();
+        UserChatSettings senderUcs = null;
+        UserChatSettings recipientUcs = null;
+
+        for (UserChatSettings chatUcs : chatUcsList) {
+            if (chatUcs.getUser().getId().equals(sender.getId())) senderUcs = chatUcs;
+            if (chatUcs.getUser().getId().equals(recipient.getId())) recipientUcs = chatUcs;
+        }
+
+        if (senderUcs != null && recipientUcs != null && senderUcs.getBanned().equals(false)
+                && recipientUcs.getBanned().equals(false) && recipientUcs.getSendNotifications().equals(true))
+            sendEmailService.sendEmail(recipient.getEmail(), messageText);
+    }
+
+    private void sendEmailFromGroupChatIfNeeded(User sender, Chat chat, String messageText) {
+        List<UserChatSettings> chatUcsList = chat.getUserChatSettingsList();
+        List<UserChatSettings> recipientsUcsList = new ArrayList<>();
+        UserChatSettings senderUcs = null;
+
+        for (UserChatSettings chatUcs : chatUcsList) {
+            if (chatUcs.getUser().getId().equals(sender.getId())) senderUcs = chatUcs;
+            else recipientsUcsList.add(chatUcs);
+        }
+
+        if (senderUcs != null && !recipientsUcsList.isEmpty() && senderUcs.getBanned().equals(false)) {
+            for (UserChatSettings recipientUcs : recipientsUcsList) {
+                User recipient = userService.tryGetUserById(recipientUcs.getUser().getId());
+                if (!recipient.isBanned() && recipientUcs.getBanned().equals(false) && recipientUcs.getSendNotifications().equals(true))
+                    sendEmailService.sendEmail(recipient.getEmail(), messageText);
+            }
+        }
     }
 }
