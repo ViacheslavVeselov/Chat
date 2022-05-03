@@ -1,6 +1,9 @@
 package bvvs.chatserver.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
@@ -39,13 +42,15 @@ public class User {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id")
+    @JsonIgnoreProperties("id")
+    @JsonProperty(value = "role")
     private Role role;
 
     @Column(name = "photo_path_to_file")
     private String photoPathToFile;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
+    @JsonIgnore
     private List<UserChatSettings> userChatSettings = new ArrayList<>();
 
     @Override

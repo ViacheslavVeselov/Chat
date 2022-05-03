@@ -4,6 +4,7 @@ import bvvs.chatserver.exception.ResourceNotFoundException;
 import bvvs.chatserver.models.Chat;
 import bvvs.chatserver.models.User;
 import bvvs.chatserver.models.dto.AuthRequestDto;
+import bvvs.chatserver.models.dto.AuthResponseDto;
 import bvvs.chatserver.models.dto.EditUserDto;
 import bvvs.chatserver.models.dto.UserDto;
 import bvvs.chatserver.repo.UserRepository;
@@ -42,7 +43,7 @@ public class UserController {
     }
 
     @PostMapping("login")
-    public String login(@RequestBody AuthRequestDto authRequestDto) {
+    public AuthResponseDto login(@RequestBody AuthRequestDto authRequestDto) {
         return userService.login(authRequestDto);
     }
 
@@ -57,10 +58,10 @@ public class UserController {
     @PreAuthorize("hasAuthority('ROLE_ADMIN')") // only for ADMIN
     @PutMapping("{userId}/ban")
     @ResponseStatus(OK)
-    public User banUser(@PathVariable String userId, @RequestParam boolean banned) {
+    public void banUserGlobally(@PathVariable String userId, @RequestParam boolean banned) {
         User user = userRepository.findById(UUID.fromString(userId)).orElseThrow(() ->
                 new ResourceNotFoundException(Map.of("No user with id", userId)));
-        return userService.banUser(user, banned);
+        userService.banUser(user, banned);
     }
 
     @GetMapping("{userId}/chats")
