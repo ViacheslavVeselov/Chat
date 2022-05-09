@@ -1,6 +1,7 @@
 package bvvs.chatserver.models;
 
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.Column;
@@ -9,6 +10,7 @@ import java.io.Serializable;
 import java.util.Objects;
 import java.util.UUID;
 
+@Data
 @Embeddable
 @NoArgsConstructor
 @AllArgsConstructor

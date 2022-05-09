@@ -145,8 +145,7 @@ public class ChatFacade {
         return (List<Chat>) chatRepository.findAllById(chatsIds);
     }
 
-    public void sendEmailFromOneToOneChatIfNeeded(User sender, User recipient, Chat chat, String messageText,
-                                                  String someParameter) {
+    public void sendEmailFromOneToOneChatIfNeeded(User sender, User recipient, Chat chat, String messageText) {
         List<UserChatSettings> chatUcsList = chat.getUserChatSettingsList();
         UserChatSettings senderUcs = null;
         UserChatSettings recipientUcs = null;
